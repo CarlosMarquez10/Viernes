@@ -6,9 +6,42 @@ const API_BASE_URL = 'http://localhost:3001/api'; // URL de ejemplo del backend
 // Base de datos simulada para desarrollo
 const mockDatabase = {
   users: [
-    { cedula: '12345678', hasTemporaryPassword: true, temporaryPassword: 'temp123', isFirstLogin: true },
-    { cedula: '87654321', hasTemporaryPassword: false, password: 'password123', isFirstLogin: false },
-    { cedula: '11111111', hasTemporaryPassword: true, temporaryPassword: 'temp456', isFirstLogin: true },
+    {
+      cedula: '12345678',
+      name: 'Juan Pérez',
+      hasTemporaryPassword: true,
+      temporaryPassword: 'temp123',
+      definitivePassword: null,
+      isFirstLogin: true,
+      passwordChanged: false
+    },
+    {
+      cedula: '87654321',
+      name: 'María García',
+      hasTemporaryPassword: false,
+      temporaryPassword: null,
+      definitivePassword: 'password123',
+      isFirstLogin: false,
+      passwordChanged: true
+    },
+    {
+      cedula: '11111111',
+      name: 'Carlos López',
+      hasTemporaryPassword: false,
+      temporaryPassword: null,
+      definitivePassword: 'mySecurePass123!',
+      isFirstLogin: false,
+      passwordChanged: true
+    },
+    {
+      cedula: '22222222',
+      name: 'Ana Rodríguez',
+      hasTemporaryPassword: true,
+      temporaryPassword: 'temp456',
+      definitivePassword: null,
+      isFirstLogin: true,
+      passwordChanged: false
+    }
   ]
 };
 
@@ -16,7 +49,7 @@ const mockDatabase = {
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const authService = {
-  // Endpoint 1: Validar si existe la cédula
+  // Endpoint 1: Validar si existe la cédula y determinar tipo de login
   async validateCedula(cedula) {
     await delay(800); // Simular latencia de red
     
@@ -43,9 +76,13 @@ export const authService = {
         success: true,
         data: {
           cedula: user.cedula,
+          name: user.name,
           hasTemporaryPassword: user.hasTemporaryPassword,
+          passwordChanged: user.passwordChanged,
           isFirstLogin: user.isFirstLogin,
-          requiresPasswordChange: user.hasTemporaryPassword
+          requiresPasswordChange: user.hasTemporaryPassword,
+          // Determinar el siguiente paso
+          nextStep: user.passwordChanged ? 'normal-login' : 'temp-password'
         }
       };
     } catch (error) {
@@ -154,10 +191,11 @@ export const authService = {
         };
       }
 
-      // Simular actualización en base de datos
-      user.password = newPassword;
+      // Actualizar usuario en la base de datos
+      user.definitivePassword = newPassword;
       user.hasTemporaryPassword = false;
       user.temporaryPassword = null;
+      user.passwordChanged = true;
       user.isFirstLogin = false;
 
       return {
@@ -167,6 +205,7 @@ export const authService = {
           authToken: `auth_token_${Date.now()}`, // Token de autenticación real
           user: {
             cedula: user.cedula,
+            name: user.name,
             isFirstLogin: false
           }
         }
@@ -182,60 +221,42 @@ export const authService = {
 
   // Endpoint 4: Login normal (para usuarios que ya cambiaron contraseña)
   async login(cedula, password) {
-    await delay(700);
+    await delay(1000);
     
-    try {
-      // En producción sería:
-      // const response = await fetch(`${API_BASE_URL}/auth/login`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ cedula, password })
-      // });
-
-      const user = mockDatabase.users.find(u => u.cedula === cedula);
-      
-      if (!user) {
-        return {
-          success: false,
-          error: 'Credenciales incorrectas',
-          code: 'INVALID_CREDENTIALS'
-        };
-      }
-
-      if (user.hasTemporaryPassword) {
-        return {
-          success: false,
-          error: 'Debe usar su contraseña temporal primero',
-          code: 'USE_TEMP_PASSWORD'
-        };
-      }
-
-      if (user.password !== password) {
-        return {
-          success: false,
-          error: 'Credenciales incorrectas',
-          code: 'INVALID_CREDENTIALS'
-        };
-      }
-
-      return {
-        success: true,
-        data: {
-          cedula: user.cedula,
-          authToken: `auth_token_${Date.now()}`,
-          user: {
-            cedula: user.cedula,
-            isFirstLogin: false
-          }
-        }
-      };
-    } catch (error) {
+    const user = mockDatabase.users.find(u => u.cedula === cedula);
+    
+    if (!user) {
       return {
         success: false,
-        error: 'Error de conexión con el servidor',
-        code: 'CONNECTION_ERROR'
+        error: 'Usuario no encontrado'
       };
     }
+
+    // Verificar que el usuario ya tenga contraseña definitiva
+    if (!user.passwordChanged || !user.definitivePassword) {
+      return {
+        success: false,
+        error: 'Este usuario debe completar el proceso de cambio de contraseña primero'
+      };
+    }
+
+    // Verificar contraseña
+    if (user.definitivePassword !== password) {
+      return {
+        success: false,
+        error: 'Contraseña incorrecta'
+      };
+    }
+
+    return {
+      success: true,
+      data: {
+        authToken: `auth_${user.cedula}_${Date.now()}`,
+        cedula: user.cedula,
+        name: user.name,
+        message: 'Login exitoso'
+      }
+    };
   }
 };
 

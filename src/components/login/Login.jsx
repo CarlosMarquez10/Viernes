@@ -36,11 +36,13 @@ export default function ModernLogin() {
       if (result.success) {
         setUserInfo(result.data);
         
-        if (result.data.hasTemporaryPassword) {
-          setStep('temp-password');
-        } else {
-          // Usuario ya tiene contraseña definitiva, ir a login normal
+        // Usar la lógica mejorada del backend
+        if (result.data.nextStep === 'normal-login') {
+          // Usuario ya tiene contraseña definitiva
           setStep('normal-password');
+        } else {
+          // Usuario necesita usar contraseña temporal
+          setStep('temp-password');
         }
       } else {
         setError(result.error);
