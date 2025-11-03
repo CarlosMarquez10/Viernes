@@ -1,262 +1,262 @@
-// Simulación de endpoints del backend para autenticación
-// En producción, estos serían llamadas reales a tu API
+/**
+ * Servicio de autenticación para la aplicación
+ * Maneja todas las operaciones relacionadas con login y autenticación
+ */
 
-const API_BASE_URL = 'http://localhost:3001/api'; // URL de ejemplo del backend
+// Configuración de la API
+const API_BASE_URL = 'https://74pbcspn-3005.use2.devtunnels.ms/api/auth';
 
-// Base de datos simulada para desarrollo
-const mockDatabase = {
-  users: [
-    {
-      cedula: '12345678',
-      name: 'Juan Pérez',
-      hasTemporaryPassword: true,
-      temporaryPassword: 'temp123',
-      definitivePassword: null,
-      isFirstLogin: true,
-      passwordChanged: false
-    },
-    {
-      cedula: '87654321',
-      name: 'María García',
-      hasTemporaryPassword: false,
-      temporaryPassword: null,
-      definitivePassword: 'password123',
-      isFirstLogin: false,
-      passwordChanged: true
-    },
-    {
-      cedula: '11111111',
-      name: 'Carlos López',
-      hasTemporaryPassword: false,
-      temporaryPassword: null,
-      definitivePassword: 'mySecurePass123!',
-      isFirstLogin: false,
-      passwordChanged: true
-    },
-    {
-      cedula: '22222222',
-      name: 'Ana Rodríguez',
-      hasTemporaryPassword: true,
-      temporaryPassword: 'temp456',
-      definitivePassword: null,
-      isFirstLogin: true,
-      passwordChanged: false
-    }
-  ]
-};
-
-// Simular delay de red
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
+/**
+ * Servicio de autenticación
+ */
 export const authService = {
-  // Endpoint 1: Validar si existe la cédula y determinar tipo de login
+  /**
+   * Valida si existe la cédula en el sistema
+   * @param {string} cedula - Número de cédula
+   * @returns {Promise<Object>} - Respuesta con información del usuario
+   */
   async validateCedula(cedula) {
-    await delay(800); // Simular latencia de red
-    
     try {
-      // En producción sería: 
-      // const response = await fetch(`${API_BASE_URL}/auth/validate-cedula`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ cedula })
-      // });
+      const response = await fetch(`${API_BASE_URL}/validate-cedula`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ cedula }),
+      });
+
+      const data = await response.json();
       
-      // Simulación de respuesta del backend
-      const user = mockDatabase.users.find(u => u.cedula === cedula);
-      
-      if (!user) {
-        return {
-          success: false,
-          error: 'Cédula no encontrada en el sistema',
-          code: 'CEDULA_NOT_FOUND'
-        };
+      if (!response.ok) {
+        throw new Error(data.message || 'Error al validar cédula');
       }
 
-      return {
-        success: true,
-        data: {
-          cedula: user.cedula,
-          name: user.name,
-          hasTemporaryPassword: user.hasTemporaryPassword,
-          passwordChanged: user.passwordChanged,
-          isFirstLogin: user.isFirstLogin,
-          requiresPasswordChange: user.hasTemporaryPassword,
-          // Determinar el siguiente paso
-          nextStep: user.passwordChanged ? 'normal-login' : 'temp-password'
-        }
-      };
+      return data;
     } catch (error) {
-      return {
-        success: false,
-        error: 'Error de conexión con el servidor',
-        code: 'CONNECTION_ERROR'
-      };
+      console.error('Error validating cedula:', error);
+      throw error;
     }
   },
 
-  // Endpoint 2: Validar contraseña temporal
+  /**
+   * Valida contraseña temporal
+   * @param {string} cedula - Número de cédula
+   * @param {string} temporaryPassword - Contraseña temporal
+   * @returns {Promise<Object>} - Respuesta con token temporal
+   */
   async validateTemporaryPassword(cedula, temporaryPassword) {
-    await delay(600);
-    
     try {
-      // En producción sería:
-      // const response = await fetch(`${API_BASE_URL}/auth/validate-temp-password`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ cedula, temporaryPassword })
-      // });
+      const response = await fetch(`${API_BASE_URL}/validate-temp-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ cedula, temporaryPassword }),
+      });
 
-      const user = mockDatabase.users.find(u => u.cedula === cedula);
+      const data = await response.json();
       
-      if (!user) {
-        return {
-          success: false,
-          error: 'Usuario no encontrado',
-          code: 'USER_NOT_FOUND'
-        };
+      if (!response.ok) {
+        throw new Error(data.message || 'Error al validar contraseña temporal');
       }
 
-      if (!user.hasTemporaryPassword) {
-        return {
-          success: false,
-          error: 'Este usuario no tiene contraseña temporal',
-          code: 'NO_TEMP_PASSWORD'
-        };
+      // Guardar el token temporal para el siguiente paso
+      if (data.success && data.data.temporaryToken) {
+        localStorage.setItem('temporaryToken', data.data.temporaryToken);
       }
 
-      if (user.temporaryPassword !== temporaryPassword) {
-        return {
-          success: false,
-          error: 'Contraseña temporal incorrecta',
-          code: 'INVALID_TEMP_PASSWORD'
-        };
-      }
-
-      return {
-        success: true,
-        data: {
-          cedula: user.cedula,
-          temporaryToken: `temp_token_${Date.now()}`, // Token temporal para seguridad
-          requiresPasswordChange: true
-        }
-      };
+      return data;
     } catch (error) {
-      return {
-        success: false,
-        error: 'Error de conexión con el servidor',
-        code: 'CONNECTION_ERROR'
-      };
+      console.error('Error validating temporary password:', error);
+      throw error;
     }
   },
 
-  // Endpoint 3: Cambiar contraseña definitiva
-  async changePassword(cedula, temporaryToken, newPassword) {
-    await delay(1000);
-    
+  /**
+   * Cambia la contraseña definitiva
+   * @param {string} cedula - Número de cédula
+   * @param {string} newPassword - Nueva contraseña
+   * @returns {Promise<Object>} - Respuesta con token de autenticación
+   */
+  async changePassword(cedula, newPassword) {
     try {
-      // En producción sería:
-      // const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
-      //   method: 'POST',
-      //   headers: { 
-      //     'Content-Type': 'application/json',
-      //     'Authorization': `Bearer ${temporaryToken}`
-      //   },
-      //   body: JSON.stringify({ cedula, newPassword })
-      // });
-
-      const user = mockDatabase.users.find(u => u.cedula === cedula);
+      const temporaryToken = localStorage.getItem('temporaryToken');
       
-      if (!user) {
-        return {
-          success: false,
-          error: 'Usuario no encontrado',
-          code: 'USER_NOT_FOUND'
-        };
+      if (!temporaryToken) {
+        throw new Error('Token temporal no encontrado. Debe validar la contraseña temporal primero.');
       }
 
-      // Validaciones de contraseña en el backend
-      if (newPassword.length < 8) {
-        return {
-          success: false,
-          error: 'La contraseña debe tener al menos 8 caracteres',
-          code: 'PASSWORD_TOO_SHORT'
-        };
+      const response = await fetch(`${API_BASE_URL}/change-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${temporaryToken}`,
+        },
+        body: JSON.stringify({ cedula, newPassword }),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Error al cambiar contraseña');
       }
 
-      if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(newPassword)) {
-        return {
-          success: false,
-          error: 'La contraseña debe contener al menos una mayúscula, una minúscula y un número',
-          code: 'PASSWORD_WEAK'
-        };
+      // Limpiar token temporal y guardar token de autenticación
+      localStorage.removeItem('temporaryToken');
+      if (data.success && data.data.authToken) {
+        localStorage.setItem('authToken', data.data.authToken);
+        localStorage.setItem('userCedula', data.data.cedula);
+        localStorage.setItem('userName', data.data.name);
       }
 
-      // Actualizar usuario en la base de datos
-      user.definitivePassword = newPassword;
-      user.hasTemporaryPassword = false;
-      user.temporaryPassword = null;
-      user.passwordChanged = true;
-      user.isFirstLogin = false;
-
-      return {
-        success: true,
-        data: {
-          cedula: user.cedula,
-          authToken: `auth_token_${Date.now()}`, // Token de autenticación real
-          user: {
-            cedula: user.cedula,
-            name: user.name,
-            isFirstLogin: false
-          }
-        }
-      };
+      return data;
     } catch (error) {
-      return {
-        success: false,
-        error: 'Error de conexión con el servidor',
-        code: 'CONNECTION_ERROR'
-      };
+      console.error('Error changing password:', error);
+      throw error;
     }
   },
 
-  // Endpoint 4: Login normal (para usuarios que ya cambiaron contraseña)
+  /**
+   * Login normal para usuarios que ya cambiaron contraseña
+   * @param {string} cedula - Número de cédula
+   * @param {string} password - Contraseña
+   * @returns {Promise<Object>} - Respuesta con token de autenticación
+   */
   async login(cedula, password) {
-    await delay(1000);
-    
-    const user = mockDatabase.users.find(u => u.cedula === cedula);
-    
-    if (!user) {
-      return {
-        success: false,
-        error: 'Usuario no encontrado'
-      };
-    }
+    try {
+      const response = await fetch(`${API_BASE_URL}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ cedula, password }),
+      });
 
-    // Verificar que el usuario ya tenga contraseña definitiva
-    if (!user.passwordChanged || !user.definitivePassword) {
-      return {
-        success: false,
-        error: 'Este usuario debe completar el proceso de cambio de contraseña primero'
-      };
-    }
-
-    // Verificar contraseña
-    if (user.definitivePassword !== password) {
-      return {
-        success: false,
-        error: 'Contraseña incorrecta'
-      };
-    }
-
-    return {
-      success: true,
-      data: {
-        authToken: `auth_${user.cedula}_${Date.now()}`,
-        cedula: user.cedula,
-        name: user.name,
-        message: 'Login exitoso'
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al iniciar sesión');
       }
-    };
+
+      // Guardar token de autenticación
+      if (data.success && data.data.authToken) {
+        localStorage.setItem('authToken', data.data.authToken);
+        localStorage.setItem('userCedula', data.data.cedula);
+        localStorage.setItem('userName', data.data.name);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error during login:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Cerrar sesión
+   * @returns {Promise<Object>} - Respuesta de logout
+   */
+  async logout() {
+    try {
+      const authToken = localStorage.getItem('authToken');
+      
+      if (authToken) {
+        const response = await fetch(`${API_BASE_URL}/logout`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+          },
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok) {
+          console.warn('Error during logout:', data.message);
+        }
+      }
+
+      // Limpiar localStorage independientemente del resultado del API
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('temporaryToken');
+      localStorage.removeItem('userCedula');
+      localStorage.removeItem('userName');
+
+      return { success: true, message: 'Sesión cerrada exitosamente' };
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Limpiar localStorage aunque haya error
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('temporaryToken');
+      localStorage.removeItem('userCedula');
+      localStorage.removeItem('userName');
+      
+      return { success: true, message: 'Sesión cerrada localmente' };
+    }
+  },
+
+  /**
+   * Verificar si el token es válido
+   * @returns {Promise<Object>} - Respuesta de verificación
+   */
+  async verifyToken() {
+    try {
+      const authToken = localStorage.getItem('authToken');
+      
+      if (!authToken) {
+        return { success: false, message: 'No hay token de autenticación' };
+      }
+
+      const response = await fetch(`${API_BASE_URL}/verify-token`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        // Token inválido, limpiar localStorage
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('userCedula');
+        localStorage.removeItem('userName');
+        throw new Error(data.message || 'Token inválido');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error verifying token:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Obtener información del usuario actual desde localStorage
+   * @returns {Object|null} - Información del usuario o null si no está logueado
+   */
+  getCurrentUser() {
+    const authToken = localStorage.getItem('authToken');
+    const userCedula = localStorage.getItem('userCedula');
+    const userName = localStorage.getItem('userName');
+
+    if (authToken && userCedula && userName) {
+      return {
+        cedula: userCedula,
+        name: userName,
+        isAuthenticated: true
+      };
+    }
+
+    return null;
+  },
+
+  /**
+   * Verificar si el usuario está autenticado
+   * @returns {boolean} - true si está autenticado
+   */
+  isAuthenticated() {
+    return !!localStorage.getItem('authToken');
   }
 };
 

@@ -109,7 +109,7 @@ export default function ModernLogin() {
     }
 
     try {
-      const result = await authService.changePassword(cedula, temporaryToken, newPassword);
+      const result = await authService.changePassword(cedula, newPassword);
       
       if (result.success) {
         // Guardar token de autenticación
