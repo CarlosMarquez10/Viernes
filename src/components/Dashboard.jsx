@@ -184,50 +184,7 @@ export default function Dashboard() {
             )}
 
             {activeTab === 'consulta' && (
-              <div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-6">Consulta</h2>
-                {/* Panel de búsqueda */}
-                <div className="bg-white rounded-lg shadow p-6 mb-6">
-                  <form className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Cédula</label>
-                      <input type="text" placeholder="Ingrese cédula" className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
-                      <input type="date" className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
-                    </div>
-                    <div className="flex items-end">
-                      <button type="button" className="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">Buscar</button>
-                    </div>
-                  </form>
-                </div>
-
-                {/* Resultados */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <p className="text-gray-600 mb-4">Resultados de la consulta</p>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        <tr>
-                          <td className="px-4 py-2 text-sm text-gray-700">—</td>
-                          <td className="px-4 py-2 text-sm text-gray-700">—</td>
-                          <td className="px-4 py-2 text-sm text-gray-700">—</td>
-                          <td className="px-4 py-2 text-sm text-gray-700">Sin datos</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
+              <ConsultaTab />
             )}
 
             {activeTab === 'documentos' && (
@@ -258,6 +215,130 @@ export default function Dashboard() {
             )}
           </div>
         </main>
+      </div>
+    </div>
+  );
+}
+
+function ConsultaTab() {
+  const [tipo, setTipo] = useState('cliente');
+  const [valor, setValor] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [result, setResult] = useState(null);
+
+  const handleBuscar = async () => {
+    setError(null);
+    setResult(null);
+
+    const v = String(valor).trim();
+    if (!v) {
+      setError('Debe ingresar un número.');
+      return;
+    }
+
+    if (tipo === 'medidor') {
+      setError('Consulta por medidor aún no disponible. Use tipo "cliente".');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const data = await authService.consultaTiempos(tipo, v);
+      setResult(data?.data || null);
+    } catch (e) {
+      setError(e?.message || 'Error en la consulta');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const rows = result?.rows || [];
+  const mesConsultado = result?.mesConsultado ?? null;
+
+  return (
+    <div>
+      <h2 className="text-3xl font-bold text-gray-900 mb-6">Consulta</h2>
+
+      {/* Panel de búsqueda */}
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+            <select
+              value={tipo}
+              onChange={(e) => setTipo(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+            >
+              <option value="cliente">Cliente</option>
+              <option value="medidor">Medidor</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Número</label>
+            <input
+              type="text"
+              placeholder="Ingrese número de cliente o medidor"
+              value={valor}
+              onChange={(e) => setValor(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+            />
+          </div>
+          <div className="flex items-end">
+            <button
+              type="button"
+              onClick={handleBuscar}
+              className="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
+            >
+              {loading ? 'Buscando...' : 'Buscar'}
+            </button>
+          </div>
+        </div>
+
+        {error && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
+            {error}
+          </div>
+        )}
+      </div>
+
+      {/* Resultados */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-gray-600">Resultados de la consulta</p>
+          {mesConsultado && (
+            <span className="text-sm text-gray-500">Mes consultado: {mesConsultado}</span>
+          )}
+        </div>
+
+        {rows.length === 0 ? (
+          <div className="text-sm text-gray-500">Sin datos disponibles.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Medidor</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Año</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mes</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Creado</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {rows.map((row, idx) => (
+                  <tr key={idx}>
+                    <td className="px-4 py-2 text-sm text-gray-700">{row?.cliente ?? '—'}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{row?.medidor ?? '—'}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{row?.ano ?? '—'}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{row?.mes ?? '—'}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{row?.created_at ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

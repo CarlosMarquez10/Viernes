@@ -5,6 +5,8 @@
 
 // Configuración de la API
 const API_BASE_URL = 'https://74pbcspn-3005.use2.devtunnels.ms/api/auth';
+// Base general para otros endpoints (no-auth)
+const API_BASE_URL_API = 'https://74pbcspn-3005.use2.devtunnels.ms/api';
 
 // =========================
 // Control de Roles (frontend)
@@ -82,6 +84,39 @@ export const authService = {
       console.error('Error validating cedula:', error);
       throw error;
     }
+  },
+
+  /**
+   * Consulta tiempos por cliente con fallback de mes en backend
+   * @param {('cliente'|'medidor')} tipo
+   * @param {string|number} valor - número de cliente o medidor
+   * @returns {Promise<Object>} - respuesta del backend
+   */
+  async consultaTiempos(tipo, valor) {
+    const authToken = localStorage.getItem('authToken');
+    if (!authToken) {
+      throw new Error('No autenticado. Inicie sesión.');
+    }
+
+    // Por ahora el backend solo soporta tipo 'cliente'
+    const body = (String(tipo).toLowerCase() === 'cliente')
+      ? { cliente: valor, tipo: 'cliente' }
+      : { tipo: 'medidor', medidor: valor };
+
+    const response = await fetch(`${API_BASE_URL_API}/consulta/tiempos`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || data.error || 'Error en consulta');
+    }
+    return data;
   },
 
   /**
