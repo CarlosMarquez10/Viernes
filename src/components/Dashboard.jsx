@@ -237,10 +237,10 @@ function ConsultaTab() {
       return;
     }
 
-    if (tipo === 'medidor') {
-      setError('Consulta por medidor aún no disponible. Use tipo "cliente".');
-      return;
-    }
+    // if (tipo === 'medidor') {
+    //   setError('Consulta por medidor aún no disponible. Use tipo "cliente".');
+    //   return;
+    // }  se comento la consulta por que se habilito la consulta por medidor.
 
     try {
       setLoading(true);
