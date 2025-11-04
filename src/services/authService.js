@@ -6,6 +6,52 @@
 // Configuración de la API
 const API_BASE_URL = 'https://74pbcspn-3005.use2.devtunnels.ms/api/auth';
 
+// =========================
+// Control de Roles (frontend)
+// =========================
+// Normaliza texto: quita acentos, pone mayúsculas y compacta espacios
+const normalize = (text) => (text || '')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toUpperCase()
+  .replace(/[()]/g, '')
+  .replace(/\s+/g, ' ')
+  .trim();
+
+// Mapeo de cargo (base de datos) -> rol lógico en frontend
+const cargoToRoleMap = {
+  'TECNOLOGO CGO': 'ADMIN',
+  'TECNÓLOGO(Supervísor)': 'SUPERVISOR',
+  'PROFESIONAL 3 CALIDAD': 'PRO_CALIDAD',
+  'PROFESIONAL': 'PROFESIONAL',
+};
+
+function getRoleFromCargo(cargo) {
+  const key = normalize(cargo);
+  // Regla específica para variaciones de "TECNÓLOGO (Supervisor)"
+  if (key.includes('TECNOLOGO') && key.includes('SUPERVISOR')) return 'SUPERVISOR';
+  return cargoToRoleMap[key] || 'BASICO';
+}
+
+// Permisos por rol (ajustable según necesidades)
+const rolePermissions = {
+  ADMIN: new Set(['viewDashboard', 'viewReportes', 'viewDocumentos', 'viewNotificaciones', 'viewConfiguracion']),
+  SUPERVISOR: new Set(['viewDashboard', 'viewReportes', 'viewDocumentos', 'viewNotificaciones']),
+  PRO_CALIDAD: new Set(['viewDashboard', 'viewReportes', 'viewNotificaciones']),
+  PROFESIONAL: new Set(['viewDashboard', 'viewReportes', 'viewDocumentos', 'viewNotificaciones']),
+  BASICO: new Set(['viewDashboard', 'viewNotificaciones']),
+};
+
+// Reglas de acceso para tabs del Dashboard
+const tabRoles = {
+  inicio: ['ADMIN', 'SUPERVISOR', 'PRO_CALIDAD', 'PROFESIONAL', 'BASICO'],
+  reportes: ['ADMIN', 'SUPERVISOR', 'PRO_CALIDAD', 'PROFESIONAL'],
+  consulta: ['ADMIN', 'SUPERVISOR', 'PRO_CALIDAD', 'PROFESIONAL'],
+  documentos: ['ADMIN', 'SUPERVISOR', 'PROFESIONAL'],
+  notificaciones: ['ADMIN', 'PRO_CALIDAD', 'PROFESIONAL', 'BASICO'],
+  configuracion: ['ADMIN'],
+};
+
 /**
  * Servicio de autenticación
  */
@@ -107,6 +153,10 @@ export const authService = {
         localStorage.setItem('authToken', data.data.authToken);
         localStorage.setItem('userCedula', data.data.cedula);
         localStorage.setItem('userName', data.data.name);
+        if (data.data.cargo) {
+          localStorage.setItem('userCargo', data.data.cargo);
+          localStorage.setItem('userRole', getRoleFromCargo(data.data.cargo));
+        }
       }
 
       return data;
@@ -143,6 +193,10 @@ export const authService = {
         localStorage.setItem('authToken', data.data.authToken);
         localStorage.setItem('userCedula', data.data.cedula);
         localStorage.setItem('userName', data.data.name);
+        if (data.data.cargo) {
+          localStorage.setItem('userCargo', data.data.cargo);
+          localStorage.setItem('userRole', getRoleFromCargo(data.data.cargo));
+        }
       }
 
       return data;
@@ -181,6 +235,8 @@ export const authService = {
       localStorage.removeItem('temporaryToken');
       localStorage.removeItem('userCedula');
       localStorage.removeItem('userName');
+      localStorage.removeItem('userCargo');
+      localStorage.removeItem('userRole');
 
       return { success: true, message: 'Sesión cerrada exitosamente' };
     } catch (error) {
@@ -190,6 +246,8 @@ export const authService = {
       localStorage.removeItem('temporaryToken');
       localStorage.removeItem('userCedula');
       localStorage.removeItem('userName');
+      localStorage.removeItem('userCargo');
+      localStorage.removeItem('userRole');
       
       return { success: true, message: 'Sesión cerrada localmente' };
     }
@@ -224,6 +282,16 @@ export const authService = {
         throw new Error(data.message || 'Token inválido');
       }
 
+      // Persistir datos del usuario si vienen del backend
+      if (data.success && data.data) {
+        if (data.data.name) localStorage.setItem('userName', data.data.name);
+        if (data.data.cedula) localStorage.setItem('userCedula', data.data.cedula);
+        if (data.data.cargo) {
+          localStorage.setItem('userCargo', data.data.cargo);
+          localStorage.setItem('userRole', getRoleFromCargo(data.data.cargo));
+        }
+      }
+
       return data;
     } catch (error) {
       console.error('Error verifying token:', error);
@@ -239,11 +307,15 @@ export const authService = {
     const authToken = localStorage.getItem('authToken');
     const userCedula = localStorage.getItem('userCedula');
     const userName = localStorage.getItem('userName');
+    const userCargo = localStorage.getItem('userCargo');
+    const userRole = localStorage.getItem('userRole') || (userCargo ? getRoleFromCargo(userCargo) : null);
 
     if (authToken && userCedula && userName) {
       return {
         cedula: userCedula,
         name: userName,
+        cargo: userCargo || null,
+        role: userRole || 'BASICO',
         isAuthenticated: true
       };
     }
@@ -257,6 +329,35 @@ export const authService = {
    */
   isAuthenticated() {
     return !!localStorage.getItem('authToken');
+  },
+
+  // -------- Helpers de acceso --------
+  getUserRole() {
+    return localStorage.getItem('userRole') || 'BASICO';
+  },
+  getUserCargo() {
+    return localStorage.getItem('userCargo') || null;
+  },
+  hasRole(role) {
+    const current = this.getUserRole();
+    return current === role;
+  },
+  hasAnyRole(roles = []) {
+    const current = this.getUserRole();
+    return roles.includes(current);
+  },
+  hasPermission(permission) {
+    const current = this.getUserRole();
+    const perms = rolePermissions[current] || new Set();
+    return perms.has(permission);
+  },
+  canAccessTab(tabId) {
+    const allowed = tabRoles[tabId] || [];
+    return this.hasAnyRole(allowed);
+  },
+  // Exponer reglas para uso externo (UI)
+  get tabRoles() {
+    return tabRoles;
   }
 };
 

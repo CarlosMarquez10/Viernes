@@ -11,22 +11,29 @@ import {
   LogOut,
   User
 } from 'lucide-react';
+import { authService } from '../services/authService';
 
 const MobileMenu = ({ activeTab, setActiveTab }) => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
+  const currentUser = authService.getCurrentUser();
 
   const menuItems = [
     { id: 'inicio', label: 'Inicio', icon: Home },
     { id: 'reportes', label: 'Reportes', icon: BarChart3 },
+    { id: 'consulta', label: 'Consulta', icon: BarChart3 },
     { id: 'documentos', label: 'Documentos', icon: FileText },
     { id: 'notificaciones', label: 'Notificaciones', icon: Bell },
     { id: 'configuracion', label: 'Configuración', icon: Settings },
   ];
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setIsOpen(false);
-    navigate('/');
+    try {
+      await authService.logout();
+    } finally {
+      navigate('/');
+    }
   };
 
   const handleMenuClick = (tabId) => {
@@ -83,15 +90,15 @@ const MobileMenu = ({ activeTab, setActiveTab }) => {
               <User className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="text-white font-semibold text-lg drop-shadow-lg">Usuario</h3>
-              <p className="text-white/90 text-sm drop-shadow-md">Dashboard</p>
+              <h3 className="text-white font-semibold text-lg drop-shadow-lg">{currentUser?.name || 'Usuario'}</h3>
+              <p className="text-white/90 text-sm drop-shadow-md">{currentUser?.cargo || 'Dashboard'}</p>
             </div>
           </div>
         </div>
 
         {/* Menu Items */}
         <nav className="flex-1 px-6 py-4">
-          {menuItems.map((item) => (
+          {menuItems.filter((item) => authService.canAccessTab(item.id)).map((item) => (
             <button
               key={item.id}
               onClick={() => handleMenuClick(item.id)}

@@ -2,23 +2,32 @@ import { useState } from 'react';
 import { LogOut, User, Settings, Home, BarChart3, FileText, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MobileMenu from './MobileMenu';
+import { authService } from '../services/authService';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('inicio');
+  const currentUser = authService.getCurrentUser();
 
-  const handleLogout = () => {
-    // Aquí puedes agregar lógica de logout (limpiar tokens, etc.)
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } finally {
+      navigate('/');
+    }
   };
 
   const menuItems = [
     { id: 'inicio', label: 'Inicio', icon: Home },
     { id: 'reportes', label: 'Reportes', icon: BarChart3 },
+    { id: 'consulta', label: 'Consulta', icon: BarChart3 },
     { id: 'documentos', label: 'Documentos', icon: FileText },
     { id: 'notificaciones', label: 'Notificaciones', icon: Bell },
     { id: 'configuracion', label: 'Configuración', icon: Settings },
   ];
+
+  // Filtrar tabs visibles según rol del usuario
+  const visibleMenuItems = menuItems.filter((item) => authService.canAccessTab(item.id));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -38,7 +47,7 @@ export default function Dashboard() {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <User className="w-8 h-8 text-gray-400 bg-gray-100 rounded-full p-1" />
-                <span className="text-sm font-medium text-gray-700 hidden sm:block">Usuario</span>
+                <span className="text-sm font-medium text-gray-700 hidden sm:block">{currentUser?.name || 'Usuario'}</span>
               </div>
               <button
                 onClick={handleLogout}
@@ -57,7 +66,7 @@ export default function Dashboard() {
         <nav className="hidden md:block w-64 bg-white shadow-sm min-h-screen">
           <div className="p-4">
             <ul className="space-y-2">
-              {menuItems.map((item) => {
+              {visibleMenuItems.map((item) => {
                 const Icon = item.icon;
                 return (
                   <li key={item.id}>
@@ -170,6 +179,53 @@ export default function Dashboard() {
                 <h2 className="text-3xl font-bold text-gray-900 mb-6">Reportes</h2>
                 <div className="bg-white rounded-lg shadow p-6">
                   <p className="text-gray-600">Aquí se mostrarán los reportes del sistema.</p>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'consulta' && (
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-6">Consulta</h2>
+                {/* Panel de búsqueda */}
+                <div className="bg-white rounded-lg shadow p-6 mb-6">
+                  <form className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Cédula</label>
+                      <input type="text" placeholder="Ingrese cédula" className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+                      <input type="date" className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+                    </div>
+                    <div className="flex items-end">
+                      <button type="button" className="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">Buscar</button>
+                    </div>
+                  </form>
+                </div>
+
+                {/* Resultados */}
+                <div className="bg-white rounded-lg shadow p-6">
+                  <p className="text-gray-600 mb-4">Resultados de la consulta</p>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        <tr>
+                          <td className="px-4 py-2 text-sm text-gray-700">—</td>
+                          <td className="px-4 py-2 text-sm text-gray-700">—</td>
+                          <td className="px-4 py-2 text-sm text-gray-700">—</td>
+                          <td className="px-4 py-2 text-sm text-gray-700">Sin datos</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             )}
