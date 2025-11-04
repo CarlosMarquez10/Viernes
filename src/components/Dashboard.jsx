@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { LogOut, User, Settings, Home, BarChart3, FileText, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MobileMenu from './MobileMenu';
+import MapComponent from './MapComponent/MapComponent';
 import { authService } from '../services/authService';
 
 export default function Dashboard() {
@@ -227,6 +228,18 @@ function ConsultaTab() {
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
 
+  const parseCoordenadas = (coordStr) => {
+    if (!coordStr) return null;
+    const s = String(coordStr).trim();
+    // admite formatos "lat,lng" o "lat lng"
+    const parts = s.split(/[;,\s]+/).filter(Boolean);
+    if (parts.length < 2) return null;
+    const lat = parseFloat(parts[0]);
+    const lng = parseFloat(parts[1]);
+    if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
+    return { lat, lng };
+  };
+
   const handleBuscar = async () => {
     setError(null);
     setResult(null);
@@ -256,6 +269,16 @@ function ConsultaTab() {
   const registro = result?.registro || null;
   const mesConsultado = result?.mesConsultado ?? null;
   const columnas = registro ? Object.keys(registro) : [];
+  const coords = registro ? parseCoordenadas(registro.coordenadas) : null;
+  const mapClientData = coords
+    ? {
+        GPS_LATITUD: coords.lat,
+        GPS_LONGITUD: coords.lng,
+        NOMBRE: registro?.servicio ? `Servicio ${registro.servicio}` : `Cliente ${registro?.cliente ?? ''}`,
+        DIRECCION: registro?.ubicacion || '',
+        CLIENTE_ID: registro?.cliente ?? '',
+      }
+    : null;
 
   return (
     <div>
@@ -282,26 +305,33 @@ function ConsultaTab() {
               placeholder="Ingrese número de cliente o medidor"
               value={valor}
               onChange={(e) => setValor(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none"
             />
           </div>
           <div className="flex items-end">
             <button
               type="button"
               onClick={handleBuscar}
-              className="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
+              className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
             >
               {loading ? 'Buscando...' : 'Buscar'}
             </button>
           </div>
         </div>
 
-        {error && (
-          <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
-            {error}
-          </div>
-        )}
+      {error && (
+        <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
+          {error}
+        </div>
+      )}
+    </div>
+
+    {/* Mapa (si hay coordenadas) */}
+    {registro && mapClientData && (
+      <div className="mb-6">
+        <MapComponent clientData={mapClientData} />
       </div>
+    )}
 
       {/* Resultados */}
       <div className="bg-white rounded-lg shadow p-6">
