@@ -253,8 +253,9 @@ function ConsultaTab() {
     }
   };
 
-  const rows = result?.rows || [];
+  const registro = result?.registro || null;
   const mesConsultado = result?.mesConsultado ?? null;
+  const columnas = registro ? Object.keys(registro) : [];
 
   return (
     <div>
@@ -311,32 +312,20 @@ function ConsultaTab() {
           )}
         </div>
 
-        {rows.length === 0 ? (
+        {!registro ? (
           <div className="text-sm text-gray-500">Sin datos disponibles.</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Medidor</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Año</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mes</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Creado</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {rows.map((row, idx) => (
-                  <tr key={idx}>
-                    <td className="px-4 py-2 text-sm text-gray-700">{row?.cliente ?? '—'}</td>
-                    <td className="px-4 py-2 text-sm text-gray-700">{row?.medidor ?? '—'}</td>
-                    <td className="px-4 py-2 text-sm text-gray-700">{row?.ano ?? '—'}</td>
-                    <td className="px-4 py-2 text-sm text-gray-700">{row?.mes ?? '—'}</td>
-                    <td className="px-4 py-2 text-sm text-gray-700">{row?.created_at ?? '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {columnas.map((col) => (
+              <div key={col} className="rounded border border-gray-200 p-3 bg-gray-50">
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                  {String(col).replace(/_/g, ' ')}
+                </div>
+                <div className="text-sm text-gray-900 break-words">
+                  {registro[col] !== null && registro[col] !== undefined && registro[col] !== '' ? String(registro[col]) : '—'}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
