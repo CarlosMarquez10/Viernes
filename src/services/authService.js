@@ -46,11 +46,11 @@ const rolePermissions = {
 
 // Reglas de acceso para tabs del Dashboard
 const tabRoles = {
-  inicio: ['ADMIN', 'SUPERVISOR', 'PRO_CALIDAD', 'PROFESIONAL', 'BASICO'],
-  reportes: ['ADMIN', 'SUPERVISOR', 'PRO_CALIDAD', 'PROFESIONAL'],
-  consulta: ['ADMIN', 'SUPERVISOR', 'PRO_CALIDAD', 'PROFESIONAL'],
-  documentos: ['ADMIN', 'SUPERVISOR', 'PROFESIONAL'],
-  notificaciones: ['ADMIN', 'PRO_CALIDAD', 'PROFESIONAL', 'BASICO'],
+  inicio: ['ADMIN'],
+  reportes: ['ADMIN'],
+  consulta: ['ADMIN', 'SUPERVISOR', 'PRO_CALIDAD', 'PROFESIONAL', 'BASICO'],
+  documentos: ['ADMIN'],
+  notificaciones: ['ADMIN'],
   configuracion: ['ADMIN'],
 };
 

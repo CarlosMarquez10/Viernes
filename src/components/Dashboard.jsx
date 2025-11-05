@@ -41,7 +41,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <h1 className="text-2xl font-bold text-orange-600 ml-16 md:ml-0">Dashboard</h1>
+                <h1 className="text-2xl font-bold text-orange-600 ml-16 md:ml-0">Viernes</h1>
               </div>
             </div>
             
@@ -227,6 +227,7 @@ function ConsultaTab() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
+  const isBasic = authService.hasRole('BASICO');
 
   const parseCoordenadas = (coordStr) => {
     if (!coordStr) return null;
@@ -269,6 +270,31 @@ function ConsultaTab() {
   const registro = result?.registro || null;
   const mesConsultado = result?.mesConsultado ?? null;
   const columnas = registro ? Object.keys(registro) : [];
+  // Ocultar campos específicos para rol BASICO
+  const normalize = (s) => String(s).trim().toLowerCase().replace(/[^\w]+/g, '_');
+  const hiddenForBasic = new Set([
+    'lectura_actual',
+    'nueva',
+    'codtarea', 'code_tarea', 'cod_tarea',
+    'intentos',
+    'ano', 'anio',
+    'codcausaobs', 'cod_causa_obs',
+    'fechaultlabor', 'fecha_ult_labor', 'fecha_ult_lab', 'fecha_ultima_labor',
+    'horaultlabor', 'hora_ult_labor', 'hora_ult_lab',
+    'secuencia',
+    'enteros',
+    'decimales',
+    'created_at', 'creado_el',
+    'periodo',
+    'obs_predio',
+    'obs_texto',
+    'mes',
+    'id',
+    'correria'
+  ]);
+  const columnasVisibles = isBasic
+    ? columnas.filter((c) => !hiddenForBasic.has(normalize(c)))
+    : columnas;
   const coords = registro ? parseCoordenadas(registro.coordenadas) : null;
   const mapClientData = coords
     ? {
@@ -346,7 +372,7 @@ function ConsultaTab() {
           <div className="text-sm text-gray-500">Sin datos disponibles.</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {columnas.map((col) => (
+            {columnasVisibles.map((col) => (
               <div key={col} className="rounded border border-gray-200 p-3 bg-gray-50">
                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
                   {String(col).replace(/_/g, ' ')}
