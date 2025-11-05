@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import MobileMenu from './MobileMenu';
 import MapComponent from './MapComponent/MapComponent';
 import { authService } from '../services/authService';
+import consorcioLogo from '../assets/consorcioci.png';
+import Policiaweb from './Policia/Policiaweb';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -22,6 +24,7 @@ export default function Dashboard() {
     { id: 'inicio', label: 'Inicio', icon: Home },
     { id: 'reportes', label: 'Reportes', icon: BarChart3 },
     { id: 'consulta', label: 'Consulta', icon: BarChart3 },
+    { id: 'policia', label: 'Policia', icon: BarChart3 },
     { id: 'documentos', label: 'Documentos', icon: FileText },
     { id: 'notificaciones', label: 'Notificaciones', icon: Bell },
     { id: 'configuracion', label: 'Configuración', icon: Settings },
@@ -40,8 +43,9 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <h1 className="text-2xl font-bold text-orange-600 ml-16 md:ml-0">Viernes</h1>
+              <div className="flex-shrink-0 flex items-center space-x-3">
+                <img src={consorcioLogo} alt="Viernes" className="w-18 h-14" />
+                <h1 className="text-2xl font-bold text-orange-600">Viernes CI</h1>
               </div>
             </div>
             
@@ -188,6 +192,15 @@ export default function Dashboard() {
               <ConsultaTab />
             )}
 
+            {activeTab === 'policia' && (
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-6">Policia</h2>
+                <div className="bg-white rounded-lg shadow p-2 md:p-6">
+                  <Policiaweb />
+                </div>
+              </div>
+            )}
+
             {activeTab === 'documentos' && (
               <div>
                 <h2 className="text-3xl font-bold text-gray-900 mb-6">Documentos</h2>
@@ -290,7 +303,9 @@ function ConsultaTab() {
     'obs_texto',
     'mes',
     'id',
-    'correria'
+    'correria',
+    'cliente',
+    'coordenadas'
   ]);
   const columnasVisibles = isBasic
     ? columnas.filter((c) => !hiddenForBasic.has(normalize(c)))

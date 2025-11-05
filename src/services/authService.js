@@ -49,6 +49,7 @@ const tabRoles = {
   inicio: ['ADMIN'],
   reportes: ['ADMIN'],
   consulta: ['ADMIN', 'SUPERVISOR', 'PRO_CALIDAD', 'PROFESIONAL', 'BASICO'],
+  policia: ['ADMIN', 'SUPERVISOR', 'PRO_CALIDAD', 'PROFESIONAL', 'BASICO'],
   documentos: ['ADMIN'],
   notificaciones: ['ADMIN'],
   configuracion: ['ADMIN'],
