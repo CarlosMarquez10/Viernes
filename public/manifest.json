@@ -1,0 +1,21 @@
+{
+  "name": "Viernes CI",
+  "short_name": "Viernes",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ff6600",
+  "icons": [
+    {
+      "src": "/assets/consorcioci-1ZwgVd4s.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/consorcioci-1ZwgVd4s.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
