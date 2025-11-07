@@ -100,16 +100,25 @@ export const authService = {
     }
 
     // Por ahora el backend solo soporta tipo 'cliente'
-    const body = (String(tipo).toLowerCase() === 'cliente')
+    const baseBody = (String(tipo).toLowerCase() === 'cliente')
       ? { cliente: valor, tipo: 'cliente' }
       : { tipo: 'medidor', medidor: valor };
 
+    // Adjuntar nombre del usuario logueado a cada petición
+    const currentUserName = localStorage.getItem('userName') || null;
+    const body = { ...baseBody, usuario: currentUserName };
+
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${authToken}`,
+    };
+    if (currentUserName) {
+      headers['X-User-Name'] = currentUserName;
+    }
+
     const response = await fetch(`${API_BASE_URL_API}/consulta/tiempos`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`,
-      },
+      headers,
       body: JSON.stringify(body),
     });
 
