@@ -112,9 +112,6 @@ export const authService = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${authToken}`,
     };
-    if (currentUserName) {
-      headers['X-User-Name'] = currentUserName;
-    }
 
     const response = await fetch(`${API_BASE_URL_API}/consulta/tiempos`, {
       method: 'POST',
