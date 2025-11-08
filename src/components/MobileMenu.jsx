@@ -21,6 +21,7 @@ const MobileMenu = ({ activeTab, setActiveTab }) => {
   const menuItems = [
     { id: 'inicio', label: 'Inicio', icon: Home },
     { id: 'reportes', label: 'Reportes', icon: BarChart3 },
+    { id: 'tiempos', label: 'Tiempos', icon: BarChart3 },
     { id: 'consulta', label: 'Consulta', icon: BarChart3 },
     { id: 'policia', label: 'Policia', icon: BarChart3 },
     { id: 'documentos', label: 'Documentos', icon: FileText },

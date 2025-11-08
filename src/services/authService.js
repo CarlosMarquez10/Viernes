@@ -48,6 +48,7 @@ const rolePermissions = {
 const tabRoles = {
   inicio: ['ADMIN'],
   reportes: ['ADMIN'],
+  tiempos: ['ADMIN', 'SUPERVISOR', 'PRO_CALIDAD', 'PROFESIONAL'],
   consulta: ['ADMIN', 'SUPERVISOR', 'PRO_CALIDAD', 'PROFESIONAL', 'BASICO'],
   policia: ['ADMIN', 'SUPERVISOR', 'PRO_CALIDAD', 'PROFESIONAL', 'BASICO'],
   documentos: ['ADMIN'],
@@ -122,6 +123,38 @@ export const authService = {
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data.message || data.error || 'Error en consulta');
+    }
+    return data;
+  },
+
+  /**
+   * Consulta todos los tiempos de un cliente (listado completo) usando /api/consulta/tiempos/Cl
+   * @param {number|string} cliente - Número de cliente
+   * @returns {Promise<Object>} - respuesta con {success, data:{cliente,total,rows}}
+   */
+  async consultaTiemposClienteTotal(cliente) {
+    const authToken = localStorage.getItem('authToken');
+    if (!authToken) {
+      throw new Error('No autenticado. Inicie sesión.');
+    }
+
+    const currentUserName = localStorage.getItem('userName') || null;
+    const body = { cliente, usuario: currentUserName };
+
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${authToken}`,
+    };
+
+    const response = await fetch(`${API_BASE_URL_API}/consulta/tiempos/Cl`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || data.error || 'Error en consulta de tiempos cliente');
     }
     return data;
   },

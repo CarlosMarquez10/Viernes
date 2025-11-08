@@ -6,6 +6,7 @@ import MapComponent from './MapComponent/MapComponent';
 import { authService } from '../services/authService';
 import consorcioLogo from '../assets/consorcioci.png';
 import Policiaweb from './Policia/Policiaweb';
+import React from 'react';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ export default function Dashboard() {
   const menuItems = [
     { id: 'inicio', label: 'Inicio', icon: Home },
     { id: 'reportes', label: 'Reportes', icon: BarChart3 },
+    { id: 'tiempos', label: 'Tiempos', icon: BarChart3 },
     { id: 'consulta', label: 'Consulta', icon: BarChart3 },
     { id: 'policia', label: 'Policia', icon: BarChart3 },
     { id: 'documentos', label: 'Documentos', icon: FileText },
@@ -190,6 +192,10 @@ export default function Dashboard() {
 
             {activeTab === 'consulta' && (
               <ConsultaTab />
+            )}
+
+            {activeTab === 'tiempos' && (
+              <TiemposTab />
             )}
 
             {activeTab === 'policia' && (
@@ -400,6 +406,241 @@ function ConsultaTab() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function TiemposTab() {
+  const [cliente, setCliente] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState(null);
+  const [rows, setRows] = React.useState([]);
+  const [total, setTotal] = React.useState(0);
+  const [chartData, setChartData] = React.useState([]);
+
+  const isBasic = authService.hasRole('BASICO');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setRows([]);
+    setTotal(0);
+
+    const clienteNum = Number(cliente);
+    if (!cliente || Number.isNaN(clienteNum)) {
+      setError('Ingrese un número de cliente válido');
+      return;
+    }
+    setLoading(true);
+    try {
+      const data = await authService.consultaTiemposClienteTotal(clienteNum);
+      setRows(data?.data?.rows || []);
+      setTotal(Number(data?.data?.total || 0));
+      const consumosObj = data?.data?.consumos || {};
+      let consumosArr = Object.values(consumosObj)
+        .map((c) => ({ label: c.nombreMes || String(c.mes || ''), value: Number(c.consumo ?? 0), mes: Number(c.mes ?? 0) }))
+        .filter((c) => !!c.label)
+        .sort((a, b) => a.mes - b.mes);
+
+      if (!consumosArr || consumosArr.length === 0) {
+        const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+        const getVal = (obj, keys) => {
+          for (const k of keys) { if (obj[k] !== undefined && obj[k] !== null) return obj[k]; }
+          return null;
+        };
+        const getLectura = (r) => Number(getVal(r, ['lectura','LECTURA_ACT','lectura_act','LECTURA_ACTUAL']) ?? 0);
+        const sorted = (data?.data?.rows || []).slice().sort((a,b) => Number(getVal(a,['mes','MES'])) - Number(getVal(b,['mes','MES'])));
+        const tmp = [];
+        for (let i=0; i<sorted.length; i++) {
+          const mes = Number(getVal(sorted[i], ['mes','MES']));
+          const lecturaActual = getLectura(sorted[i]);
+          const next = sorted.find(r => Number(getVal(r,['mes','MES'])) === mes + 1);
+          if (next) {
+            const lecturaSiguiente = getLectura(next);
+            tmp.push({ label: monthNames[mes-1] || String(mes), value: Math.max(0, lecturaSiguiente - lecturaActual), mes });
+          }
+        }
+        consumosArr = tmp;
+      }
+      setChartData(consumosArr);
+    } catch (err) {
+      setError(err?.message || 'Error al consultar tiempos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (isBasic) {
+    return (
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Tiempos</h2>
+        <div className="text-red-600">No tiene permisos para ver esta sección.</div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h2 className="text-3xl font-bold text-gray-900 mb-6">Tiempos</h2>
+      <div className="bg-white rounded-lg shadow p-3 md:p-6 mb-6">
+        <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+            <div>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-0.5 md:mb-1">Cliente</label>
+              <input
+                type="number"
+                value={cliente}
+                onChange={(e) => setCliente(e.target.value)}
+                className="w-full border rounded-md px-2 md:px-3 py-1.5 md:py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                placeholder="Ingrese número de cliente"
+                required
+              />
+            </div>
+          </div>
+          <div className="flex items-center space-x-3">
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-3 py-1.5 md:px-4 md:py-2 text-sm bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50"
+            >
+              {loading ? 'Consultando...' : 'Consultar'}
+            </button>
+            {error && <span className="text-red-600 text-sm">{error}</span>}
+          </div>
+        </form>
+      </div>
+
+      {/* Consumos por mes - Gráfica de barras (primero) */}
+      <div className="bg-white rounded-lg shadow mb-6">
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <h3 className="text-lg font-medium text-gray-900">Consumos por mes</h3>
+          {chartData && chartData.length > 0 && (
+            <span className="text-sm text-gray-600">Meses: {chartData.length}</span>
+          )}
+        </div>
+        <div className="p-6">
+          {chartData && chartData.length > 0 ? (
+            <BarChart data={chartData} height={320} barWidth={42} gap={24} rotateLabels={-20} />
+          ) : (
+            <div className="text-gray-500 text-sm">No hay datos de consumo para graficar.</div>
+          )}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <h3 className="text-lg font-medium text-gray-900">Resultados</h3>
+          <span className="text-sm text-gray-600">Total: {total}</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Instalación</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Cliente</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Medidor</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Empleado</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Cédula Emp</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Mes</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Nombre Mes</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Ciclo</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">CodTarea</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Lectura Act</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {rows && rows.length > 0 ? (
+                rows.map((r, idx) => (
+                  <tr key={idx}>
+                    <td className="px-4 py-2 text-sm text-gray-700">{r.INSTALACION ?? r.instalacion}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{r.CLIENTE ?? r.cliente}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{r.MEDIDOR ?? r.medidor}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{r.nombreEmpleado ?? ''}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{r.cedulaEmpleado ?? r.LECTOR ?? r.lector}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{r.MES ?? r.mes}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{r.nombreMes ?? ''}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{r.CICLO ?? r.ciclo}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{r.CODTAREA ?? r.codtarea}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{r.LECTURA_ACT ?? r.lectura_act ?? r.lectura}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={8} className="px-4 py-6 text-center text-gray-500">Sin resultados</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      
+    </div>
+  );
+}
+
+function BarChart({ data, height = 320, barWidth = 42, gap = 24, rotateLabels = -20, responsive = true }) {
+  const containerRef = React.useRef(null);
+  const [containerWidth, setContainerWidth] = React.useState(0);
+
+  React.useEffect(() => {
+    const update = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.clientWidth);
+      }
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
+  // Cálculos dinámicos para móvil/desktop
+  const n = Math.max(1, data.length);
+  let chartWidth = responsive && containerWidth ? containerWidth : n * (barWidth + gap) + gap;
+  let bw = barWidth;
+  let gp = gap;
+  if (responsive && containerWidth) {
+    gp = Math.max(8, Math.min(24, chartWidth / (n * 6))); // gap proporcional
+    bw = Math.max(18, Math.min(48, (chartWidth - gp * (n + 1)) / n)); // ancho de barra proporcional
+  }
+
+  const chartHeight = height;
+  const maxValue = Math.max(...data.map((d) => Number(d.value) || 0), 0) || 1;
+  const labelArea = 34; // espacio para etiquetas de meses (abajo)
+  const topArea = 28;   // espacio reservado arriba para que los valores no se corten
+  const scaleY = (value) => (value / maxValue) * (chartHeight - labelArea - topArea);
+
+  // Rotación y tamaño de etiqueta adaptable
+  const smallWidth = chartWidth < 420 || n > 6;
+  const rot = responsive ? (smallWidth ? -35 : -15) : rotateLabels;
+  const labelFont = smallWidth ? 11 : 12;
+
+  return (
+    <div ref={containerRef} className="overflow-x-hidden w-full">
+      <svg width={chartWidth} height={chartHeight}>
+        {/* Eje X baseline */}
+        <line x1={0} y1={chartHeight - labelArea} x2={chartWidth} y2={chartHeight - labelArea} stroke="#e5e7eb" strokeWidth={1} />
+        {data.map((d, i) => {
+          const x = gp + i * (bw + gp);
+          const h = scaleY(Number(d.value) || 0);
+          const y = chartHeight - labelArea - h;
+          const yVal = Math.max(12, y - 12); // evita que el valor se desborde por arriba
+          return (
+            <g key={i}>
+              {/* Barra */}
+              <rect x={x} y={y} width={bw} height={h} fill="#fb923c" rx={6} />
+              {/* Valor */}
+              <text x={x + bw / 2} y={yVal} textAnchor="middle" fontSize={12} fill="#374151">
+                {d.value}
+              </text>
+              {/* Label mes (rotada para mejor lectura en pantallas pequeñas) */}
+              <text x={x + bw / 2} y={chartHeight - 10} textAnchor="middle" fontSize={labelFont} fill="#6b7280" transform={`rotate(${rot}, ${x + bw / 2}, ${chartHeight - 10})`}>
+                {d.label}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
     </div>
   );
 }
