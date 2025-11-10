@@ -26,6 +26,7 @@ export default function Dashboard() {
     { id: 'reportes', label: 'Reportes', icon: BarChart3 },
     { id: 'tiempos', label: 'Tiempos', icon: BarChart3 },
     { id: 'consulta', label: 'Consulta', icon: BarChart3 },
+    { id: 'DBcliente', label: 'DB Cliente', icon: FileText },
     { id: 'policia', label: 'Policia', icon: BarChart3 },
     { id: 'documentos', label: 'Documentos', icon: FileText },
     { id: 'notificaciones', label: 'Notificaciones', icon: Bell },
@@ -196,6 +197,10 @@ export default function Dashboard() {
 
             {activeTab === 'tiempos' && (
               <TiemposTab />
+            )}
+
+            {activeTab === 'DBcliente' && (
+              <DBClienteTab />
             )}
 
             {activeTab === 'policia' && (
@@ -641,6 +646,128 @@ function BarChart({ data, height = 320, barWidth = 42, gap = 24, rotateLabels = 
           );
         })}
       </svg>
+    </div>
+  );
+}
+function DBClienteTab() {
+  const [medidor, setMedidor] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState(null);
+  const [result, setResult] = React.useState(null);
+
+  const handleConsultar = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setResult(null);
+    const medNum = Number(medidor);
+    if (!medidor || Number.isNaN(medNum)) {
+      setError('Ingrese un número de medidor válido');
+      return;
+    }
+    setLoading(true);
+    try {
+      const data = await authService.consultaMedidorSac(medNum);
+      setResult(data?.data ?? data);
+    } catch (err) {
+      setError(err?.message || 'Error en la consulta');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Helper para renderizar objetos o arrays
+  const renderData = (data) => {
+    if (!data) return <div className="text-sm text-gray-500">Sin datos</div>;
+    if (Array.isArray(data)) {
+      const cols = Array.from(
+        data.reduce((acc, row) => {
+          Object.keys(row || {}).forEach((k) => acc.add(k));
+          return acc;
+        }, new Set())
+      );
+      return (
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                {cols.map((c) => (
+                  <th key={c} className="px-4 py-2 text-left text-xs font-medium text-gray-500">
+                    {String(c).replace(/_/g, ' ')}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {data.map((row, i) => (
+                <tr key={i}>
+                  {cols.map((c) => (
+                    <td key={c} className="px-4 py-2 text-sm text-gray-700">
+                      {row[c] !== null && row[c] !== undefined && row[c] !== '' ? String(row[c]) : '—'}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+    // object
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {Object.entries(data || {}).map(([key, value]) => (
+          <div key={key} className="rounded border border-gray-200 p-3 bg-gray-50">
+            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+              {String(key).replace(/_/g, ' ')}
+            </div>
+            <div className="text-sm text-gray-900 break-words">
+              {value !== null && value !== undefined && value !== '' ? String(value) : '—'}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div>
+      <h2 className="text-3xl font-bold text-gray-900 mb-6">DB Cliente (SAC)</h2>
+      <div className="bg-white rounded-lg shadow p-3 md:p-6 mb-6">
+        <form onSubmit={handleConsultar} className="space-y-3 md:space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+            <div>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-0.5 md:mb-1">Medidor</label>
+              <input
+                type="number"
+                value={medidor}
+                onChange={(e) => setMedidor(e.target.value)}
+                className="w-full border rounded-md px-2 md:px-3 py-1.5 md:py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                placeholder="Ingrese número de medidor"
+                required
+              />
+            </div>
+          </div>
+          <div className="flex items-center space-x-3">
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-3 py-1.5 md:px-4 md:py-2 text-sm bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50"
+            >
+              {loading ? 'Consultando...' : 'Consultar'}
+            </button>
+            {error && <span className="text-red-600 text-sm">{error}</span>}
+          </div>
+        </form>
+      </div>
+
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="px-6 py-2 border-b border-gray-200 flex items-center justify-between">
+          <h3 className="text-lg font-medium text-gray-900">Resultado</h3>
+        </div>
+        <div className="p-4">
+          {renderData(result)}
+        </div>
+      </div>
     </div>
   );
 }

@@ -50,6 +50,7 @@ const tabRoles = {
   reportes: ['ADMIN'],
   tiempos: ['ADMIN', 'SUPERVISOR', 'PRO_CALIDAD', 'PROFESIONAL'],
   consulta: ['ADMIN', 'SUPERVISOR', 'PRO_CALIDAD', 'PROFESIONAL', 'BASICO'],
+  DBcliente: ['ADMIN', 'SUPERVISOR', 'PRO_CALIDAD', 'PROFESIONAL', 'BASICO'],
   policia: ['ADMIN', 'SUPERVISOR', 'PRO_CALIDAD', 'PROFESIONAL', 'BASICO'],
   documentos: ['ADMIN'],
   notificaciones: ['ADMIN'],
@@ -123,6 +124,45 @@ export const authService = {
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data.message || data.error || 'Error en consulta');
+    }
+    return data;
+  },
+
+  /**
+   * Consulta un medidor en SAC
+   * Body: { medidor, usuario }
+   * Endpoint backend esperado: /api/consulta/medidorSac
+   */
+  async consultaMedidorSac(medidor) {
+    const authToken = localStorage.getItem('authToken');
+    if (!authToken) {
+      throw new Error('No autenticado. Inicie sesión.');
+    }
+
+    const currentUserName = localStorage.getItem('userName') || null;
+    const body = { medidor, usuario: currentUserName };
+
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${authToken}`,
+    };
+
+    const url = `${API_BASE_URL_API}/consulta/tiempos/medidorSac`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
+
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      const text = await response.text();
+      throw new Error(`Respuesta no JSON (${response.status}). Detalle: ${text.slice(0,120)}...`);
+    }
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || data.error || `Error HTTP ${response.status}`);
     }
     return data;
   },
