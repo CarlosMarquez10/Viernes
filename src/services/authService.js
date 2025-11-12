@@ -168,6 +168,35 @@ export const authService = {
   },
 
   /**
+   * Obtiene información del panel (cantidades de lecturas, consultas, empleados, etc.)
+   * GET /api/consulta/informacion/panel
+   */
+  async getPanelInfo() {
+    const authToken = localStorage.getItem('authToken');
+    const headers = authToken
+      ? { 'Authorization': `Bearer ${authToken}`, 'Accept': 'application/json' }
+      : { 'Accept': 'application/json' };
+
+    const response = await fetch(`${API_BASE_URL_API}/consulta/informacion/panel?ts=${Date.now()}`, {
+      method: 'GET',
+      headers,
+    });
+
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      const text = await response.text();
+      throw new Error(`Respuesta no JSON (${response.status}). Detalle: ${text.slice(0,120)}...`);
+    }
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || data.error || `Error HTTP ${response.status}`);
+    }
+    // algunos controladores envían {success, data}; normalizamos retornando data si existe
+    return data?.data ?? data;
+  },
+
+  /**
    * Consulta todos los tiempos de un cliente (listado completo) usando /api/consulta/tiempos/Cl
    * @param {number|string} cliente - Número de cliente
    * @returns {Promise<Object>} - respuesta con {success, data:{cliente,total,rows}}

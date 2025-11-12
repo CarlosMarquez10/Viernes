@@ -12,6 +12,34 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('inicio');
   const currentUser = authService.getCurrentUser();
+  const [panelInfo, setPanelInfo] = useState(null);
+  const [panelLoading, setPanelLoading] = useState(false);
+  const getVal = (obj, keys, def = 0) => {
+    for (const k of keys) {
+      const v = obj?.[k];
+      if (v !== undefined && v !== null) return Number(v) || 0;
+    }
+    return def;
+  };
+
+  React.useEffect(() => {
+    let mounted = true;
+    const fetchPanel = async () => {
+      try {
+        setPanelLoading(true);
+        const info = await authService.getPanelInfo();
+        if (mounted) setPanelInfo(info);
+      } catch (e) {
+        // opcional: manejo silencioso en home
+        console.warn('Error obteniendo información del panel:', e?.message || e);
+      } finally {
+        if (mounted) setPanelLoading(false);
+      }
+    };
+    fetchPanel();
+    const id = setInterval(fetchPanel, 60000); // cada 1 minuto
+    return () => { mounted = false; clearInterval(id); };
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -103,52 +131,71 @@ export default function Dashboard() {
               <div>
                 <h2 className="text-3xl font-bold text-gray-900 mb-6">Bienvenido al Dashboard</h2>
                 
-                {/* Stats Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+                {/* Stats Cards (dinámicas) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
                   <div className="bg-white rounded-lg shadow p-6">
                     <div className="flex items-center">
                       <div className="p-2 bg-blue-100 rounded-lg">
                         <BarChart3 className="w-6 h-6 text-blue-600" />
                       </div>
                       <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-600">Total Usuarios</p>
-                        <p className="text-2xl font-bold text-gray-900">1,234</p>
+                        <p className="text-sm font-medium text-gray-600">Lecturas</p>
+                        <p className="text-2xl font-bold text-gray-900">{panelLoading ? '...' : getVal(panelInfo, ['cantidad_lectura','cantida_lectura','cantidadLecturas'])}</p>
                       </div>
                     </div>
                   </div>
-                  
                   <div className="bg-white rounded-lg shadow p-6">
                     <div className="flex items-center">
                       <div className="p-2 bg-green-100 rounded-lg">
                         <FileText className="w-6 h-6 text-green-600" />
                       </div>
                       <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-600">Documentos</p>
-                        <p className="text-2xl font-bold text-gray-900">567</p>
+                        <p className="text-sm font-medium text-gray-600">Consultas</p>
+                        <p className="text-2xl font-bold text-gray-900">{panelLoading ? '...' : getVal(panelInfo, ['cantidad_consulta'])}</p>
                       </div>
                     </div>
                   </div>
-                  
                   <div className="bg-white rounded-lg shadow p-6">
                     <div className="flex items-center">
                       <div className="p-2 bg-yellow-100 rounded-lg">
-                        <Bell className="w-6 h-6 text-yellow-600" />
+                        <User className="w-6 h-6 text-yellow-600" />
                       </div>
                       <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-600">Notificaciones</p>
-                        <p className="text-2xl font-bold text-gray-900">89</p>
+                        <p className="text-sm font-medium text-gray-600">Empleados</p>
+                        <p className="text-2xl font-bold text-gray-900">{panelLoading ? '...' : getVal(panelInfo, ['cantidad_empleado'])}</p>
                       </div>
                     </div>
                   </div>
-                  
                   <div className="bg-white rounded-lg shadow p-6">
                     <div className="flex items-center">
                       <div className="p-2 bg-purple-100 rounded-lg">
-                        <Settings className="w-6 h-6 text-purple-600" />
+                        <User className="w-6 h-6 text-purple-600" />
                       </div>
                       <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-600">Configuraciones</p>
-                        <p className="text-2xl font-bold text-gray-900">12</p>
+                        <p className="text-sm font-medium text-gray-600">Empleados Activos</p>
+                        <p className="text-2xl font-bold text-gray-900">{panelLoading ? '...' : getVal(panelInfo, ['cantidad_empleado_activo'])}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-orange-100 rounded-lg">
+                        <FileText className="w-6 h-6 text-orange-600" />
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600">Clientes SAC</p>
+                        <p className="text-2xl font-bold text-gray-900">{panelLoading ? '...' : getVal(panelInfo, ['cantidad_cliente_sac'])}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-indigo-100 rounded-lg">
+                        <Settings className="w-6 h-6 text-indigo-600" />
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600">Tipo Facturación</p>
+                        <p className="text-2xl font-bold text-gray-900">{panelLoading ? '...' : getVal(panelInfo, ['cantidad_tipo_factura'])}</p>
                       </div>
                     </div>
                   </div>
