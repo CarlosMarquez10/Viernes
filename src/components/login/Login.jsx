@@ -225,7 +225,7 @@ export default function ModernLogin() {
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <input
-                    type="text"
+                    type="number"
                     value={cedula}
                     onChange={(e) => setCedula(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition"
