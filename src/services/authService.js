@@ -53,6 +53,7 @@ const tabRoles = {
   correrias: ['ADMIN', 'SUPERVISOR', 'PRO_CALIDAD', 'PROFESIONAL', 'BASICO'],
   DBcliente: ['ADMIN', 'SUPERVISOR', 'PRO_CALIDAD', 'PROFESIONAL', 'BASICO'],
   policia: ['ADMIN', 'SUPERVISOR', 'PRO_CALIDAD', 'PROFESIONAL', 'BASICO'],
+  ViernesBot: ['ADMIN', 'SUPERVISOR', 'PRO_CALIDAD', 'PROFESIONAL', 'BASICO'],
   documentos: ['ADMIN'],
   notificaciones: ['ADMIN'],
   configuracion: ['ADMIN'],

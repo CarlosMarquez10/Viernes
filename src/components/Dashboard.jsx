@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LogOut, User, Settings, Home, BarChart3, FileText, Clock, UserSearch, Siren, UserCheckIcon, DatabaseBackup, Bell } from 'lucide-react';
+import { LogOut, User, Settings, Home, BarChart3, FileText, Clock, UserSearch, Siren, UserCheckIcon, DatabaseBackup, BotIcon, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MobileMenu from './MobileMenu';
 import MapComponent from './MapComponent/MapComponent';
@@ -57,6 +57,7 @@ export default function Dashboard() {
     { id: 'consulta', label: 'Consulta', icon:UserSearch},
     { id: 'DBcliente', label: 'DB Cliente', icon: DatabaseBackup },
     { id: 'policia', label: 'Policia', icon: Siren },
+    { id: 'ViernesBot', label: 'Viernes Bot', icon: BotIcon },
     { id: 'documentos', label: 'Documentos', icon: FileText },
     { id: 'notificaciones', label: 'Notificaciones', icon: Bell },
     { id: 'configuracion', label: 'Configuración', icon: Settings },
@@ -265,6 +266,15 @@ export default function Dashboard() {
                 <h2 className="text-3xl font-bold text-gray-900 mb-6">Policia</h2>
                 <div className="bg-white rounded-lg shadow p-2 md:p-6">
                   <Policiaweb />
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'ViernesBot' && (
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-6">Viernes Bot</h2>
+                <div className="bg-white rounded-lg shadow p-6">
+                  <p className="text-gray-600">Interactúa con el bot de Viernes para obtener informacion sobre codigos de lectura y Scr o Procedimiento. ---  <span className='text-red-600'>PROXIMAMENTE</span>.</p>
                 </div>
               </div>
             )}
