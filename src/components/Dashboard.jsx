@@ -256,7 +256,7 @@ export default function Dashboard() {
               <div>
                 <h2 className="text-3xl font-bold text-gray-900 mb-6">Correria Pendientes</h2>
                 <div className="bg-white rounded-lg shadow p-6">
-                  <p className="text-gray-600">Gestión de documentos del sistema.</p>
+                  <p className="text-gray-600">Gestión de documentos del sistema.  ---  <span className='text-red-600'>PROXIMAMENTE</span></p>
                 </div>
               </div>
             )}
