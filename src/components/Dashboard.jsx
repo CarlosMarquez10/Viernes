@@ -420,7 +420,7 @@ function ConsultaTab() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Número</label>
             <input
-              type="text"
+              type="number"
               placeholder="Ingrese número de cliente o medidor"
               value={valor}
               onChange={(e) => setValor(e.target.value)}
