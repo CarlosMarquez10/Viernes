@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LogOut, User, Settings, Home, BarChart3, FileText, Bell } from 'lucide-react';
+import { LogOut, User, Settings, Home, BarChart3, FileText, Clock, UserSearch, Siren, UserCheckIcon, DatabaseBackup, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MobileMenu from './MobileMenu';
 import MapComponent from './MapComponent/MapComponent';
@@ -52,10 +52,11 @@ export default function Dashboard() {
   const menuItems = [
     { id: 'inicio', label: 'Inicio', icon: Home },
     { id: 'reportes', label: 'Reportes', icon: BarChart3 },
-    { id: 'tiempos', label: 'Tiempos', icon: BarChart3 },
-    { id: 'consulta', label: 'Consulta', icon: BarChart3 },
-    { id: 'DBcliente', label: 'DB Cliente', icon: FileText },
-    { id: 'policia', label: 'Policia', icon: BarChart3 },
+    { id: 'correrias', label: 'Correrias', icon: UserCheckIcon},
+    { id: 'tiempos', label: 'Tiempos', icon: Clock },
+    { id: 'consulta', label: 'Consulta', icon:UserSearch},
+    { id: 'DBcliente', label: 'DB Cliente', icon: DatabaseBackup },
+    { id: 'policia', label: 'Policia', icon: Siren },
     { id: 'documentos', label: 'Documentos', icon: FileText },
     { id: 'notificaciones', label: 'Notificaciones', icon: Bell },
     { id: 'configuracion', label: 'Configuración', icon: Settings },
@@ -129,7 +130,7 @@ export default function Dashboard() {
           <div className="max-w-7xl mx-auto">
             {activeTab === 'inicio' && (
               <div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-6">Bienvenido al Dashboard</h2>
+                <h2 className="text-3xl font-bold text-gray-900 mb-6">Panel de Control</h2>
                 
                 {/* Stats Cards (dinámicas) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
@@ -248,6 +249,15 @@ export default function Dashboard() {
 
             {activeTab === 'DBcliente' && (
               <DBClienteTab />
+            )}
+
+            {activeTab === 'correrias' && (
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-6">Correria Pendientes</h2>
+                <div className="bg-white rounded-lg shadow p-6">
+                  <p className="text-gray-600">Gestión de documentos del sistema.</p>
+                </div>
+              </div>
             )}
 
             {activeTab === 'policia' && (

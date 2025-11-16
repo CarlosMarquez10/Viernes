@@ -9,7 +9,8 @@ import {
   Bell, 
   Settings, 
   LogOut,
-  User
+  User,
+  UserSearch
 } from 'lucide-react';
 import { authService } from '../services/authService';
 
@@ -21,6 +22,7 @@ const MobileMenu = ({ activeTab, setActiveTab }) => {
   const menuItems = [
     { id: 'inicio', label: 'Inicio', icon: Home },
     { id: 'reportes', label: 'Reportes', icon: BarChart3 },
+    { id: 'correrias', label: 'Correrias', icon: UserSearch },
     { id: 'DBcliente', label: 'DB Cliente', icon: FileText },
     { id: 'tiempos', label: 'Tiempos', icon: BarChart3 },
     { id: 'consulta', label: 'Consulta', icon: BarChart3 },

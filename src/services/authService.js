@@ -50,6 +50,7 @@ const tabRoles = {
   reportes: ['ADMIN'],
   tiempos: ['ADMIN', 'SUPERVISOR', 'PRO_CALIDAD', 'PROFESIONAL'],
   consulta: ['ADMIN', 'SUPERVISOR', 'PRO_CALIDAD', 'PROFESIONAL', 'BASICO'],
+  correrias: ['ADMIN', 'SUPERVISOR', 'PRO_CALIDAD', 'PROFESIONAL', 'BASICO'],
   DBcliente: ['ADMIN', 'SUPERVISOR', 'PRO_CALIDAD', 'PROFESIONAL', 'BASICO'],
   policia: ['ADMIN', 'SUPERVISOR', 'PRO_CALIDAD', 'PROFESIONAL', 'BASICO'],
   documentos: ['ADMIN'],
