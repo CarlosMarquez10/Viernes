@@ -245,6 +245,10 @@ export default function Dashboard() {
               <ConsultaTab />
             )}
 
+            {activeTab === 'Perfillector' && (
+              <PerfilLectorTab />
+            )}
+
             {activeTab === 'tiempos' && (
               <TiemposTab />
             )}
@@ -474,6 +478,155 @@ function ConsultaTab() {
                 <div className="text-sm text-gray-900 break-words">
                   {registro[col] !== null && registro[col] !== undefined && registro[col] !== '' ? String(registro[col]) : '—'}
                 </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PerfilLectorTab() {
+  const [lector, setLector] = useState('');
+  const [nombre, setNombre] = useState('');
+  const [orderDir, setOrderDir] = useState('DESC');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [result, setResult] = useState(null);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setResult(null);
+
+    const ced = String(lector).trim();
+    const nom = String(nombre).trim();
+    if (!ced) {
+      setError('Ingrese la cédula del lector');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const data = await authService.consultaPerfilLector({ lector: ced, nombre: nom || null, orderDir });
+      setResult(data?.data ? data : data); // algunos controladores envían {success, data}
+    } catch (e) {
+      setError(e?.message || 'Error al consultar perfil del lector');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const rows = result?.data || [];
+  const totalRegistros = Number(result?.totalRegistros || rows?.length || 0);
+
+  const resumen = rows && rows.length > 0
+    ? rows.reduce((acc, r) => {
+        const le = Number(r.leidas ?? 0);
+        const nle = Number(r.no_leidas ?? 0);
+        const tot = Number(r.total ?? 0);
+        return {
+          leidas: acc.leidas + le,
+          no_leidas: acc.no_leidas + nle,
+          total: acc.total + tot,
+        };
+      }, { leidas: 0, no_leidas: 0, total: 0 })
+    : { leidas: 0, no_leidas: 0, total: 0 };
+
+  const porcentajeGeneral = resumen.total > 0
+    ? Number(((resumen.leidas * 100) / resumen.total).toFixed(2))
+    : 0;
+
+  return (
+    <div>
+      <h2 className="text-3xl font-bold text-gray-900 mb-6">Perfil Lector</h2>
+
+      <div className="bg-white rounded-lg shadow p-3 md:p-6 mb-6">
+        <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+            <div>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-0.5 md:mb-1">Cédula del lector</label>
+              <input
+                type="text"
+                value={lector}
+                onChange={(e) => setLector(e.target.value)}
+                className="w-full border rounded-md px-2 md:px-3 py-1.5 md:py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                placeholder="Ingrese cédula"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-0.5 md:mb-1">Nombre del lector (opcional)</label>
+              <input
+                type="text"
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                className="w-full border rounded-md px-2 md:px-3 py-1.5 md:py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                placeholder="Ingrese nombre"
+              />
+            </div>
+            <div>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-0.5 md:mb-1">Orden</label>
+              <select
+                value={orderDir}
+                onChange={(e) => setOrderDir(e.target.value)}
+                className="w-full border rounded-md px-2 md:px-3 py-1.5 md:py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              >
+                <option value="DESC">Descendente</option>
+                <option value="ASC">Ascendente</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex items-center space-x-3">
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-3 py-1.5 md:px-4 md:py-2 text-sm bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50"
+            >
+              {loading ? 'Consultando...' : 'Consultar perfil'}
+            </button>
+            {error && <span className="text-red-600 text-sm">{error}</span>}
+          </div>
+        </form>
+      </div>
+
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-gray-600">Resultados</p>
+          <div className="text-sm text-gray-500 flex gap-4">
+            <span>Total registros: {totalRegistros}</span>
+            <span>Leídas: {resumen.leidas}</span>
+            <span>No leídas: {resumen.no_leidas}</span>
+            <span>Porcentaje general: {porcentajeGeneral}%</span>
+          </div>
+        </div>
+
+        {!rows || rows.length === 0 ? (
+          <div className="text-sm text-gray-500">Sin datos disponibles.</div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {rows.map((r, idx) => (
+              <div key={`${r.ano}-${r.mes}-${idx}`} className="rounded border border-gray-200 p-3 bg-gray-50">
+                <div className="text-sm font-semibold text-gray-900 mb-2">
+                  Ciclo {String(r.ciclo ?? '')} · Correría {String(r.correria ?? '')}
+                </div>
+                <div className="text-xs text-gray-600 mb-2">Año {String(r.ano ?? '')} · Mes {String(r.mes ?? '')} · Últ. labor {String(r.fechaultlabor ?? '')}</div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="rounded bg-white border p-2">
+                    <div className="text-[11px] text-gray-500">Leídas</div>
+                    <div className="text-sm font-medium text-green-700">{Number(r.leidas ?? 0)}</div>
+                  </div>
+                  <div className="rounded bg-white border p-2">
+                    <div className="text-[11px] text-gray-500">No leídas</div>
+                    <div className="text-sm font-medium text-red-700">{Number(r.no_leidas ?? 0)}</div>
+                  </div>
+                  <div className="rounded bg-white border p-2">
+                    <div className="text-[11px] text-gray-500">Total</div>
+                    <div className="text-sm font-medium text-gray-900">{Number(r.total ?? 0)}</div>
+                  </div>
+                </div>
+                <div className="mt-2 text-xs text-gray-700">% Leídas: {Number(r.porcentaje_leidas ?? 0)}%</div>
               </div>
             ))}
           </div>
