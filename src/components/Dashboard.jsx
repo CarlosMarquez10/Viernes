@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LogOut, User, Settings, Home, BarChart3, FileText, Clock, UserSearch, Siren, UserCheckIcon, DatabaseBackup, BotIcon, Bell } from 'lucide-react';
+import { LogOut, User, Settings, Home, BarChart3, FileText, Clock, User2, UserSearch, Siren, UserCheckIcon, DatabaseBackup, BotIcon, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MobileMenu from './MobileMenu';
 import MapComponent from './MapComponent/MapComponent';
@@ -53,6 +53,7 @@ export default function Dashboard() {
     { id: 'inicio', label: 'Inicio', icon: Home },
     { id: 'reportes', label: 'Reportes', icon: BarChart3 },
     { id: 'correrias', label: 'Correrias', icon: UserCheckIcon},
+    { id: 'Perfillector', label: 'Perfil Lector', icon: User2},
     { id: 'tiempos', label: 'Tiempos', icon: Clock },
     { id: 'consulta', label: 'Consulta', icon:UserSearch},
     { id: 'DBcliente', label: 'DB Cliente', icon: DatabaseBackup },

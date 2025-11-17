@@ -10,7 +10,13 @@ import {
   Settings, 
   LogOut,
   User,
-  UserCheckIcon, Clock, UserSearch, Siren, DatabaseBackup, BotIcon
+  User2,
+  UserCheckIcon, 
+  Clock, 
+  UserSearch, 
+  Siren, 
+  DatabaseBackup, 
+  BotIcon
 } from 'lucide-react';
 import { authService } from '../services/authService';
 
@@ -23,6 +29,7 @@ const MobileMenu = ({ activeTab, setActiveTab }) => {
     { id: 'inicio', label: 'Inicio', icon: Home },
     { id: 'reportes', label: 'Reportes', icon: BarChart3 },
     { id: 'correrias', label: 'Correrias', icon: UserCheckIcon},
+    { id: 'Perfillector', label: 'Perfil Lector', icon: User2},
     { id: 'tiempos', label: 'Tiempos', icon: Clock },
     { id: 'consulta', label: 'Consulta', icon:UserSearch},
     { id: 'DBcliente', label: 'DB Cliente', icon: DatabaseBackup },
